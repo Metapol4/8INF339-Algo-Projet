@@ -12,13 +12,13 @@ public class Player : MonoBehaviour
             mousepos.z = Camera.main.nearClipPlane + 1;
             Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(mousepos);
 
-            Vector2 cell = GameManager.Instance.GetGrid().WorldToCell(mouseWorld);
-            Debug.Log("Going to " + cell);
+            GridCell cell = GameManager.Instance.GetGrid().WorldToCell(mouseWorld);
+            Debug.Log("Going to " + cell.x + ", " + cell.y);
             GoToCell(cell);
         }
     }
 
-    private void GoToCell(Vector2 cell)
+    private void GoToCell(GridCell cell)
     {
         transform.position = GameManager.Instance.GetGrid().CellToWorld(cell);
     }

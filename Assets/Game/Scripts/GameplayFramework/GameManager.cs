@@ -6,18 +6,31 @@ public class GameManager : MonoBehaviour
 
     [SerializeField]
     private Player player;
+    [SerializeField]
+    private SpriteRenderer gridSprite;
 
-    private Grid grid = new Grid(10,10,1);
+    private Grid grid = new Grid(10, 10, 1);
 
     private void Awake()
     {
-        if(GameManager.Instance != null)
+        if (GameManager.Instance != null)
         {
             Destroy(this);
             return;
         }
         Instance = this;
-        player.transform.position = grid.CellToWorld(Vector2.zero);
+        player.transform.position = grid.CellToWorld(new GridCell(0,0));
+
+        for (int i = 0; i < grid.Width; i++)
+        {
+            for (int j = 0; j < grid.Height; j++)
+            {
+                SpriteRenderer square = Instantiate<SpriteRenderer>(gridSprite);
+                Vector3 position = grid.CellToWorld(new GridCell(i, j));
+                square.transform.position = position;
+                Debug.Log(i + " " + j);
+            }
+        }
     }
 
     public Grid GetGrid()

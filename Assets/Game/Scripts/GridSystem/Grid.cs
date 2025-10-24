@@ -1,6 +1,16 @@
 using System;
 using UnityEngine;
-using UnityEngine.SocialPlatforms.GameCenter;
+
+public struct GridCell
+{
+    public int x;
+    public int y;
+    public GridCell(int x, int y)
+    {
+        this.x = x;
+        this.y = y;
+    }
+}
 
 public class Grid
 {
@@ -9,50 +19,65 @@ public class Grid
     private float cellSize = 100;
     private int[,] gridArray;
 
+    public int[,] GridArray { get => gridArray; private set => gridArray = value; }
+    public int Width { get => width; private set => width = value; }
+    public int Height { get => height; private set => height = value; }
+    public float CellSize { get => cellSize; private set => cellSize = value; }
+
     public Grid(int width, int height, float cellSize)
     {
-        this.width = width;
-        this.height = height;
-        this.cellSize = cellSize;
+        this.Width = width;
+        this.Height = height;
+        this.CellSize = cellSize;
 
-        gridArray = new int[width, height];
+        GridArray = new int[width, height];
 
     }
 
-    public Vector2 CellToWorld(Vector2 cell)
+    public Vector2 CellToWorld(GridCell cell)
     {
         cell = ClampCellToGridSize(cell);
-        Vector2 worldPos = new Vector2(cell.x, cell.y) * cellSize;
-
+        Vector2 worldPos = new Vector2(cell.x, cell.y) * CellSize;
 
         return worldPos;
     }
 
-    public Vector2 WorldToCell(Vector2 pos)
+    public GridCell WorldToCell(Vector2 pos)
     {
-        Vector2 cell = Vector2.zero;
+        Debug.Log(pos);
+        GridCell cell;
+        cell.x = 0;
+        cell.y = 0;
 
-        pos.x /= cellSize;
-        pos.y /= cellSize;
+        pos.x /= CellSize;
+        pos.y /= CellSize;
 
-        if (pos.x > 0)
-            cell.x = Mathf.FloorToInt(pos.x);
-        else
-            cell.x = Mathf.CeilToInt(pos.x);
+        cell.x = Mathf.RoundToInt(pos.x);
+        cell.y = Mathf.RoundToInt(pos.y);
 
-        if (pos.y > 0)
-            cell.y = Mathf.FloorToInt(pos.y);
-        else
-            cell.y = Mathf.CeilToInt(pos.y);
-
-        cell = ClampCellToGridSize(cell);
         return cell;
     }
 
-    public Vector2 ClampCellToGridSize(Vector2 cell)
+    public GridCell ClampCellToGridSize(GridCell cell)
     {
-        cell.x = Math.Clamp(cell.x, -width, width);
-        cell.y = Math.Clamp(cell.y, -height, height);
+        cell.x = Math.Clamp(cell.x, 0, Width - 1);
+        cell.y = Math.Clamp(cell.y, 0, Height - 1);
         return cell;
+    }
+
+    public bool IsWithinBounds(GridCell cell)
+    {
+        if (cell.x >= width || cell.y >= width)
+            return false;
+        if (cell.x < 0 || cell.y < 0)
+            return false;
+        return true;
+    }
+
+    public void SetValue(GridCell cell, int value)
+    {
+        if (!IsWithinBounds(cell))
+            return;
+        GridArray[cell.x, cell.y] = value;
     }
 }
