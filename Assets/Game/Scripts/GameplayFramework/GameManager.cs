@@ -19,7 +19,7 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
-        player.transform.position = grid.CellToWorld(new GridCell(0,0));
+        player.transform.position = grid.CellToWorld(new GridCell());
 
         for (int i = 0; i < grid.Width; i++)
         {
@@ -28,9 +28,10 @@ public class GameManager : MonoBehaviour
                 SpriteRenderer square = Instantiate<SpriteRenderer>(gridSprite);
                 Vector3 position = grid.CellToWorld(new GridCell(i, j));
                 square.transform.position = position;
-                Debug.Log(i + " " + j);
+                //Debug.Log(i + " " + j);
             }
         }
+        grid.ComputeAdjencies();
     }
 
     public Grid GetGrid()
