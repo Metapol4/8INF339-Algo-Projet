@@ -1,20 +1,41 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using Utils;
 
 public struct GridCell
 {
     public int index;
-    //public int y;
     public CellType cellType;
-    public GridCell(int index = 0, /*int y = 0,*/ CellType cellType = CellType.GROUND)
+    public GridCell(int index = 0, CellType cellType = CellType.GROUND)
     {
         this.index = index;
-        //this.y = y;
         this.cellType = cellType;
     }
+
+    public override bool Equals(object obj)
+    {
+        return obj is GridCell cell &&
+               index == cell.index &&
+               cellType == cell.cellType;
+    }
+
+    public static bool operator ==(GridCell c1, GridCell c2)
+    {
+        return c1.Equals(c2);
+    }
+
+    public static bool operator !=(GridCell c1, GridCell c2)
+    {
+        return !c1.Equals(c2);
+    }
+
+    public int GetWeight()
+    {
+        return (int)cellType;
+    }
+
+
 }
 
 public class Grid
@@ -22,14 +43,10 @@ public class Grid
     private int width;
     private int height;
     private float cellSize = 100;
-    private int[] gridArray;
-    //private int[,] gridArray;
-    private List<Tuple<int, int>>[,] adjacencies;
-
+    private GridCell[] gridArray;
     private List<Tuple<int, int>>[] adjacencyList;
 
-    public int[] GridArray { get => gridArray; private set => gridArray = value; }
-    //public int[,] GridArray { get => gridArray; private set => gridArray = value; }
+    public GridCell[] GridArray { get => gridArray; private set => gridArray = value; }
     public int Width { get => width; private set => width = value; }
     public int Height { get => height; private set => height = value; }
     public float CellSize { get => cellSize; private set => cellSize = value; }
@@ -41,7 +58,12 @@ public class Grid
         this.Height = height;
         this.CellSize = cellSize;
 
-        GridArray = new int[width * height];
+        GridArray = new GridCell[width * height];
+
+        for (int i = 0; i < GridArray.Length; i++)
+        {
+            GridArray[i] = new GridCell(i);
+        }
 
         adjacencyList = new List<Tuple<int, int>>[width * height];
 
@@ -85,20 +107,13 @@ public class Grid
         return cell;
     }
 
-    public bool IsWithinBounds(GridCell cell)
+    public bool IsWithinBounds(int index)
     {
-        if (cell.index >= gridArray.Length )
+        if (index >= gridArray.Length)
             return false;
-        if (cell.index < 0)
+        if (index < 0)
             return false;
         return true;
-    }
-
-    public void SetValue(GridCell cell, int value)
-    {
-        if (!IsWithinBounds(cell))
-            return;
-        GridArray[cell.index] = value;
     }
 
     public void AddEdge(int u, int v, int weight)
@@ -108,43 +123,9 @@ public class Grid
 
     public void ComputeAdjencies()
     {
-        AddEdge(0, 1, 10);
-        AddEdge(0, 4, 5);
-        AddEdge(1, 2, 1);
-        AddEdge(1, 4, 2);
-        AddEdge(2, 3, 4);
-        AddEdge(3, 0, 7);
-        AddEdge(3, 2, 6);
-        AddEdge(4, 1, 3);
-        AddEdge(4, 2, 9);
-        AddEdge(4, 3, 2);
-        /*
-        for (int i = 0; i < width; i++)
+        for (int i = 0; i < gridArray.Length; i++)
         {
-            for (int j = 0; j < height; j++)
-            {
-                List<Tuple<int, int>> current = GetBlankAdjacentCells(i, j);
-                foreach (Tuple<int, int> item in current)
-                {
-                    adjacencies[i, j].Add(item);
-                }
-            }
-        }*/
-    }
-
-    public GridCell ConvertXYToGridCell(int x, int y, CellType type = CellType.GROUND)
-    {
-        return new GridCell(x + width * y, type);
-    }
-
-    public Tuple<int, int> ConvertIndexToXY(int index)
-    {
-        return new Tuple<int, int>(index % width, index / width);
-    }
-
-    private List<Tuple<int, int>> GetBlankAdjacentCells(int x, int y)
-    {
-        (int dx, int dy)[] directions = new (int, int)[]
+            (int dx, int dy)[] directions = new (int, int)[]
         {
             (-1, 0), // up
             (1, 0),  // down
@@ -152,24 +133,55 @@ public class Grid
             (0, 1)   // right
         };
 
-        List<Tuple<int, int>> result = new List<Tuple<int, int>>();
 
-        foreach ((int dx, int dy) direction in directions)
-        {
-            int nx = x + direction.dx;
-            int ny = y + direction.dy;
-
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height)
+            foreach ((int dx, int dy) direction in directions)
             {
-                result.Add(Tuple.Create(nx, ny));
+                Tuple<int, int> xy = ConvertIndexToXY(i);
+                int nx = xy.Item1 + direction.dx;
+                int ny = xy.Item2 + direction.dy;
+
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height)
+                {
+                    int ni = ConvertXYToIndex(nx, ny);
+                    if (gridArray[ni].cellType != CellType.WALL)
+                    {
+                        int weight = gridArray[ni].GetWeight();
+                        Debug.Log("WGT: " + weight);
+                        AddEdge(i, ni, weight);
+                    }
+                }
             }
         }
 
-        return result;
+        foreach (var adjency in adjacencyList)
+        {
+            foreach (var item in adjency)
+            {
+                Debug.Log(item);
+            }
+        }
     }
 
-    public List<Tuple<int, int>>[] GetAdjencies()
+    public GridCell ConvertXYToGridCell(int x, int y, CellType type = CellType.GROUND)
     {
-        return adjacencies.Cast<List<Tuple<int, int>>>().ToArray();
+        return new GridCell(ConvertXYToIndex(x, y), type);
+    }
+
+    public int ConvertXYToIndex(int x, int y)
+    {
+        return (x + width * y);
+    }
+
+    public Tuple<int, int> ConvertIndexToXY(int index)
+    {
+        return new Tuple<int, int>(index % width, index / width);
+    }
+
+    public void SetCellType(int index, CellType type)
+    {
+        if (!IsWithinBounds(index))
+            return;
+
+
     }
 }
