@@ -26,7 +26,7 @@ public class GameManager : MonoBehaviour
             for (int j = 0; j < grid.Height; j++)
             {
                 SpriteRenderer square = Instantiate<SpriteRenderer>(gridSprite);
-                Vector3 position = grid.CellToWorld(new GridCell(i, j));
+                Vector3 position = grid.CellToWorld(i, j);
                 square.transform.position = position;
                 //Debug.Log(i + " " + j);
             }

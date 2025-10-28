@@ -23,15 +23,15 @@ public class Player : MonoBehaviour
     {
         Grid grid = GameManager.Instance.GetGrid();
 
-        int source = 0; //currentCell.y * grid.Width + currentCell.x;
-        int[] distances = Dijkstra(source);
+        //int source = 0; //currentCell.y * grid.Width + currentCell.x;
+        //int[] distances = Dijkstra(source);
         transform.position = grid.CellToWorld(cell);
-        currentCell = cell;
+        //currentCell = cell;
 
-        for (int i = 0; i < distances.Length; i++)
-        {
-            Debug.Log($"{i}\t{distances[i]}");
-        }
+        //for (int i = 0; i < distances.Length; i++)
+        //{
+        //    Debug.Log($"{i}\t{distances[i]}");
+        //}
     }
 
     private int[] Dijkstra(int source)
