@@ -7,9 +7,15 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private Player player;
     [SerializeField]
-    private SpriteRenderer gridSprite;
+    private SpriteRenderer groundSprite;
+    [SerializeField]
+    private SpriteRenderer wallSprite;
+    [SerializeField]
+    private SpriteRenderer waterSprite;
+    [SerializeField]
+    private SpriteRenderer elevatedSprite;
 
-    private Grid grid = new Grid(10, 10, 1);
+    private Grid grid;
 
     private void Awake()
     {
@@ -19,15 +25,36 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
+        grid = new Grid(10, 10, 1);
+
         player.transform.position = grid.CellToWorld(new GridCell());
 
         for (int i = 0; i < grid.Width; i++)
         {
             for (int j = 0; j < grid.Height; j++)
             {
-                SpriteRenderer square = Instantiate<SpriteRenderer>(gridSprite);
+                int index = grid.ConvertXYToIndex(i, j);
+                SpriteRenderer renderer;
+                switch (grid.GridArray[index].cellType)
+                {
+                    case Utils.CellType.GROUND:
+                        renderer = Instantiate<SpriteRenderer>(groundSprite);
+                        break;
+                    case Utils.CellType.WALL:
+                        renderer = Instantiate<SpriteRenderer>(wallSprite);
+                        break;
+                    case Utils.CellType.WATER:
+                        renderer = Instantiate<SpriteRenderer>(waterSprite);
+                        break;
+                    case Utils.CellType.ELEVATED:
+                        renderer = Instantiate<SpriteRenderer>(elevatedSprite);
+                        break;
+                    default:
+                        renderer = Instantiate<SpriteRenderer>(groundSprite);
+                        break;
+                }
                 Vector3 position = grid.CellToWorld(i, j);
-                square.transform.position = position;
+                renderer.transform.position = position;
                 //Debug.Log(i + " " + j);
             }
         }

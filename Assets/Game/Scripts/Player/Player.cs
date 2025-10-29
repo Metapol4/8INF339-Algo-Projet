@@ -19,7 +19,7 @@ public class Player : MonoBehaviour
         }
     }
     [SerializeField]
-    private float moveSpeed = 0.3f;
+    private float moveSpeed = 0.15f;
     [SerializeField]
     private GridCell targetCell;
     [SerializeField]
@@ -69,10 +69,7 @@ public class Player : MonoBehaviour
         }
         List<int> path = MakePathFromResult(source, cell.index, result);
 
-        foreach (var item in path)
-        {
-            Debug.Log(item);
-        }
+
         targetCell = cell;
         StartCoroutine(GoToCellAnimation(path));
     }
@@ -85,6 +82,7 @@ public class Player : MonoBehaviour
 
         while (current != -1)
         {
+            Debug.Log("PTH:" + result[current].weight);
             path.Add(current);
             current = result[current].previousIndex;
         }

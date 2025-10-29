@@ -449,7 +449,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   player: {fileID: 1973092596}
-  gridSprite: {fileID: 4441121182481516842, guid: 0345047182ea8024db96c532ada79209, type: 3}
+  groundSprite: {fileID: 4441121182481516842, guid: 0345047182ea8024db96c532ada79209, type: 3}
+  wallSprite: {fileID: 4441121182481516842, guid: 99cbda14b46837b40b5ef7833e9b3156, type: 3}
+  waterSprite: {fileID: 4441121182481516842, guid: 3ebbd5082d76eaf408135c750ecc1f6b, type: 3}
+  elevatedSprite: {fileID: 4441121182481516842, guid: 96a59220f0a49ad47be3d6f276dec8bb, type: 3}
 --- !u!4 &1717894618
 Transform:
   m_ObjectHideFlags: 0
@@ -496,6 +499,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e58b2b0a5fe670e409f1b1357d8db694, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Player
+  moveSpeed: 0.15
+  moving: 0
 --- !u!212 &1973092597
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -542,7 +547,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 99
   m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
   m_Color: {r: 0.45622426, g: 0.22957456, b: 0.7264151, a: 1}
   m_FlipX: 0

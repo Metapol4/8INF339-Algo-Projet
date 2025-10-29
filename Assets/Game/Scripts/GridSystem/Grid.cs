@@ -29,13 +29,10 @@ public struct GridCell
     {
         return !c1.Equals(c2);
     }
-
     public int GetWeight()
     {
         return (int)cellType;
     }
-
-
 }
 
 public class Grid
@@ -60,10 +57,15 @@ public class Grid
 
         GridArray = new GridCell[width * height];
 
+        PlaceSpecialCells();
+
         for (int i = 0; i < GridArray.Length; i++)
         {
-            GridArray[i] = new GridCell(i);
+            if (GridArray[i].cellType == 0)
+                GridArray[i] = new GridCell(i);
         }
+
+        Debug.Log("CLL: " + gridArray[5].cellType);
 
         adjacencyList = new List<Tuple<int, int>>[width * height];
 
@@ -71,6 +73,39 @@ public class Grid
         {
             adjacencyList[i] = new List<Tuple<int, int>>();
         }
+    }
+
+    public void PlaceSpecialCells()
+    {
+        gridArray[4] = new GridCell(4, CellType.WALL);
+        gridArray[14] = new GridCell(14, CellType.WALL);
+        gridArray[24] = new GridCell(24, CellType.WALL);
+
+        gridArray[50] = new GridCell(50, CellType.WALL);
+        gridArray[51] = new GridCell(51, CellType.WALL);
+        gridArray[52] = new GridCell(52, CellType.WALL);
+        gridArray[53] = new GridCell(53, CellType.WALL);
+        gridArray[54] = new GridCell(54, CellType.WALL);
+        gridArray[55] = new GridCell(55, CellType.WALL);
+
+        gridArray[80] = new GridCell(80, CellType.WALL);
+        gridArray[81] = new GridCell(81, CellType.WALL);
+        gridArray[91] = new GridCell(91, CellType.WALL);
+
+        gridArray[77] = new GridCell(77, CellType.WALL);
+        gridArray[87] = new GridCell(87, CellType.WALL);
+        gridArray[97] = new GridCell(97, CellType.WALL);
+        gridArray[78] = new GridCell(78, CellType.WALL);
+
+        gridArray[63] = new GridCell(63, CellType.WATER);
+        gridArray[73] = new GridCell(73, CellType.WATER);
+        gridArray[83] = new GridCell(83, CellType.WATER);
+
+        gridArray[79] = new GridCell(79, CellType.WATER);
+
+        gridArray[8] = new GridCell(8, CellType.ELEVATED);
+        gridArray[18] = new GridCell(18, CellType.ELEVATED);
+        gridArray[28] = new GridCell(28, CellType.ELEVATED);
     }
 
     public Vector2 CellToWorld(int x, int y)
@@ -143,7 +178,7 @@ public class Grid
                 if (nx >= 0 && nx < width && ny >= 0 && ny < height)
                 {
                     int ni = ConvertXYToIndex(nx, ny);
-                    if (gridArray[ni].cellType != CellType.WALL)
+                    if (gridArray[ni].cellType != CellType.WALL && gridArray[i].cellType != CellType.WALL)
                     {
                         int weight = gridArray[ni].GetWeight();
                         Debug.Log("WGT: " + weight);
@@ -181,7 +216,5 @@ public class Grid
     {
         if (!IsWithinBounds(index))
             return;
-
-
     }
 }
