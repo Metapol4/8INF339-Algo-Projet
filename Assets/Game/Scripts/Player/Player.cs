@@ -69,6 +69,8 @@ public class Player : MonoBehaviour
         }
         List<int> path = MakePathFromResult(source, cell.index, result);
 
+        if (path.Count <= 1)
+            return;
 
         targetCell = cell;
         StartCoroutine(GoToCellAnimation(path));
@@ -82,7 +84,7 @@ public class Player : MonoBehaviour
 
         while (current != -1)
         {
-            Debug.Log("PTH:" + result[current].weight);
+            
             path.Add(current);
             current = result[current].previousIndex;
         }
