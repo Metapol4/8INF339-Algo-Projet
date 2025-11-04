@@ -1,5 +1,10 @@
 namespace Utils
 {
+    public enum PathfindAlgo
+    {
+        DIJKSTRA,
+        BFS
+    }
     public enum CellType
     {
         GROUND = 1,

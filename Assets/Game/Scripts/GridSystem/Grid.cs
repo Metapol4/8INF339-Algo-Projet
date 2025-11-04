@@ -33,6 +33,11 @@ public struct GridCell
     {
         return (int)cellType;
     }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(index, cellType);
+    }
 }
 
 public class Grid
@@ -41,13 +46,13 @@ public class Grid
     private int height;
     private float cellSize = 100;
     private GridCell[] gridArray;
-    private List<Tuple<int, int>>[] adjacencyList;
+    private List<PathElement>[] adjacencyList;
 
     public GridCell[] GridArray { get => gridArray; private set => gridArray = value; }
     public int Width { get => width; private set => width = value; }
     public int Height { get => height; private set => height = value; }
     public float CellSize { get => cellSize; private set => cellSize = value; }
-    public List<Tuple<int, int>>[] AdjacencyList { get => adjacencyList; private set => adjacencyList = value; }
+    public List<PathElement>[] AdjacencyList { get => adjacencyList; private set => adjacencyList = value; }
 
     public Grid(int width, int height, float cellSize)
     {
@@ -67,11 +72,11 @@ public class Grid
 
         Debug.Log("CLL: " + gridArray[5].cellType);
 
-        adjacencyList = new List<Tuple<int, int>>[width * height];
+        adjacencyList = new List<PathElement>[width * height];
 
         for (int i = 0; i < width * height; i++)
         {
-            adjacencyList[i] = new List<Tuple<int, int>>();
+            adjacencyList[i] = new List<PathElement>();
         }
     }
 
@@ -153,7 +158,7 @@ public class Grid
 
     public void AddEdge(int u, int v, int weight)
     {
-        adjacencyList[u].Add(new Tuple<int, int>(v, weight));
+        adjacencyList[u].Add(new PathElement(u, weight, v));
     }
 
     public void ComputeAdjencies()
