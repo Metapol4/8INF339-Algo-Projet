@@ -28,6 +28,13 @@ public class Player : MonoBehaviour
     [SerializeField]
     private PathfindAlgo pathfindAlgo = PathfindAlgo.DIJKSTRA;
 
+
+    private void Start()
+    {
+        GameManager.Instance.UpdateAlgoText(pathfindAlgo);
+    }
+
+
     public void OnClick(InputAction.CallbackContext context)
     {
         if (context.started)
@@ -54,6 +61,7 @@ public class Player : MonoBehaviour
                     pathfindAlgo = PathfindAlgo.DIJKSTRA;
                     break;
             }
+            GameManager.Instance.UpdateAlgoText(pathfindAlgo);
         }
     }
 

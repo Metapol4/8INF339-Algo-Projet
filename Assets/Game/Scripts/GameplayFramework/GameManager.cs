@@ -1,4 +1,6 @@
+using TMPro;
 using UnityEngine;
+using Utils;
 
 public class GameManager : MonoBehaviour
 {
@@ -14,6 +16,8 @@ public class GameManager : MonoBehaviour
     private SpriteRenderer waterSprite;
     [SerializeField]
     private SpriteRenderer elevatedSprite;
+    [SerializeField]
+    private TMP_Text algoText;
 
     private Grid grid;
 
@@ -59,6 +63,19 @@ public class GameManager : MonoBehaviour
             }
         }
         grid.ComputeAdjencies();
+    }
+
+    public void UpdateAlgoText(PathfindAlgo algo)
+    {
+        switch (algo)
+        {
+            case PathfindAlgo.DIJKSTRA:
+                algoText.text = "DIJKSTRA";
+                break;
+            case PathfindAlgo.BFS:
+                algoText.text = "BFS";
+                break;
+        }
     }
 
     public Grid GetGrid()
