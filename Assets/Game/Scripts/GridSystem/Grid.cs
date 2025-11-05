@@ -7,10 +7,12 @@ public struct GridCell
 {
     public int index;
     public CellType cellType;
-    public GridCell(int index = 0, CellType cellType = CellType.GROUND)
+    public Enemy enemy;
+    public GridCell(int index = 0, CellType cellType = CellType.GROUND, Enemy enemy = null)
     {
         this.index = index;
         this.cellType = cellType;
+        this.enemy = enemy;
     }
 
     public override bool Equals(object obj)
@@ -70,8 +72,6 @@ public class Grid
                 GridArray[i] = new GridCell(i);
         }
 
-        Debug.Log("CLL: " + gridArray[5].cellType);
-
         adjacencyList = new List<PathElement>[width * height];
 
         for (int i = 0; i < width * height; i++)
@@ -80,37 +80,18 @@ public class Grid
         }
     }
 
-    public void PlaceSpecialCells()
+    private void PlaceSpecialCells()
     {
-        gridArray[4] = new GridCell(4, CellType.WALL);
-        gridArray[14] = new GridCell(14, CellType.WALL);
-        gridArray[24] = new GridCell(24, CellType.WALL);
+        int[] walls = new int[] { 4, 14, 24, 50, 51, 52, 53, 54, 55, 80, 81, 91, 77, 87, 97, 78 };
+        int[] water = new int[] { 63, 73, 83 };
+        int[] elevated = new int[] { 8, 18, 28 };
 
-        gridArray[50] = new GridCell(50, CellType.WALL);
-        gridArray[51] = new GridCell(51, CellType.WALL);
-        gridArray[52] = new GridCell(52, CellType.WALL);
-        gridArray[53] = new GridCell(53, CellType.WALL);
-        gridArray[54] = new GridCell(54, CellType.WALL);
-        gridArray[55] = new GridCell(55, CellType.WALL);
-
-        gridArray[80] = new GridCell(80, CellType.WALL);
-        gridArray[81] = new GridCell(81, CellType.WALL);
-        gridArray[91] = new GridCell(91, CellType.WALL);
-
-        gridArray[77] = new GridCell(77, CellType.WALL);
-        gridArray[87] = new GridCell(87, CellType.WALL);
-        gridArray[97] = new GridCell(97, CellType.WALL);
-        gridArray[78] = new GridCell(78, CellType.WALL);
-
-        gridArray[63] = new GridCell(63, CellType.WATER);
-        gridArray[73] = new GridCell(73, CellType.WATER);
-        gridArray[83] = new GridCell(83, CellType.WATER);
-
-        gridArray[79] = new GridCell(79, CellType.WATER);
-
-        gridArray[8] = new GridCell(8, CellType.ELEVATED);
-        gridArray[18] = new GridCell(18, CellType.ELEVATED);
-        gridArray[28] = new GridCell(28, CellType.ELEVATED);
+        foreach (int i in walls)
+            gridArray[i] = new GridCell(i, CellType.WALL);
+        foreach (int i in water)
+            gridArray[i] = new GridCell(i, CellType.WATER);
+        foreach (int i in elevated)
+            gridArray[i] = new GridCell(i, CellType.ELEVATED);
     }
 
     public Vector2 CellToWorld(int x, int y)
@@ -186,20 +167,12 @@ public class Grid
                     if (gridArray[ni].cellType != CellType.WALL && gridArray[i].cellType != CellType.WALL)
                     {
                         int weight = gridArray[ni].GetWeight();
-                        Debug.Log("WGT: " + weight);
                         AddEdge(i, ni, weight);
                     }
                 }
             }
         }
 
-        foreach (var adjency in adjacencyList)
-        {
-            foreach (var item in adjency)
-            {
-                Debug.Log(item);
-            }
-        }
     }
 
     public GridCell ConvertXYToGridCell(int x, int y, CellType type = CellType.GROUND)
@@ -221,5 +194,18 @@ public class Grid
     {
         if (!IsWithinBounds(index))
             return;
+    }
+
+    public List<GridCell> GetWalkableCells()
+    {
+        List<GridCell> cells = new List<GridCell>();
+
+        foreach (var cell in GridArray)
+        {
+            if(cell.cellType != CellType.WALL)
+                cells.Add(cell);
+        }
+
+        return cells;
     }
 }

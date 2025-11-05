@@ -1,3 +1,5 @@
+using NUnit.Framework;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using Utils;
@@ -18,6 +20,12 @@ public class GameManager : MonoBehaviour
     private SpriteRenderer elevatedSprite;
     [SerializeField]
     private TMP_Text algoText;
+    [SerializeField]
+    private Enemy enemyPrefab;
+    [SerializeField]
+    private int nbOfRandomEnemies = 5;
+    [SerializeField]
+    private int randomBountyMax = 10;
 
     private Grid grid;
 
@@ -63,6 +71,39 @@ public class GameManager : MonoBehaviour
             }
         }
         grid.ComputeAdjencies();
+
+        PlaceRandomEnemies();
+    }
+
+    public void PlaceRandomEnemies()
+    {
+        List<GridCell> walkableCells = grid.GetWalkableCells();
+
+        for (int i = 0; i < nbOfRandomEnemies; i++)
+        {
+            int randomIndex = Random.Range(0, walkableCells.Count - 1);
+            int randomCell = walkableCells[randomIndex].index;
+            int randomBounty = Random.Range(1, randomBountyMax);
+
+            grid.GridArray[randomCell].enemy = Instantiate(enemyPrefab);
+            grid.GridArray[randomCell].enemy.Cell = grid.GridArray[randomCell];
+            grid.GridArray[randomCell].enemy.transform.position = grid.CellToWorld(grid.GridArray[randomCell]);
+            grid.GridArray[randomCell].enemy.Bounty = randomBounty;
+        }
+    }
+
+    public void PlaceScriptedEnemies()
+    {
+        GridCell[] gridArray = grid.GridArray;
+
+        int[] enemies = new int[] { 8, 12, 60, 99 };
+
+        foreach (int i in enemies)
+        {
+            gridArray[i].enemy = Instantiate(enemyPrefab);
+            gridArray[i].enemy.Cell = gridArray[i];
+            gridArray[i].enemy.transform.position = grid.CellToWorld(gridArray[i]);
+        }
     }
 
     public void UpdateAlgoText(PathfindAlgo algo)

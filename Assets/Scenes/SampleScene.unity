@@ -831,6 +831,7 @@ MonoBehaviour:
   waterSprite: {fileID: 4441121182481516842, guid: 3ebbd5082d76eaf408135c750ecc1f6b, type: 3}
   elevatedSprite: {fileID: 4441121182481516842, guid: 96a59220f0a49ad47be3d6f276dec8bb, type: 3}
   algoText: {fileID: 1058418845}
+  enemyPrefab: {fileID: 7790803683382351903, guid: 8fd6a7060e0d3be41aa13866a9b04d65, type: 3}
 --- !u!4 &1717894618
 Transform:
   m_ObjectHideFlags: 0

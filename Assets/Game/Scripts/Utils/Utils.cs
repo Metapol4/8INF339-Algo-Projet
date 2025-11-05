@@ -10,6 +10,6 @@ namespace Utils
         GROUND = 1,
         WALL = 999,
         WATER = 5,
-        ELEVATED = 10
+        ELEVATED = 10,
     }
 }
