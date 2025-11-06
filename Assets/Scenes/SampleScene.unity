@@ -884,7 +884,7 @@ MonoBehaviour:
   moving: 0
   pathfindAlgo: 0
   chasingEnemies: 0
-  sortType: 0
+  sortType: 1
 --- !u!212 &1973092597
 SpriteRenderer:
   m_ObjectHideFlags: 0

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Utils;
@@ -80,43 +81,113 @@ public class Player : MonoBehaviour
 
     private IEnumerator EnemySequence()
     {
-        int i = 0;
-        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
-        while (i < enemies.Length)
+        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        while (enemies.Length > 0)
         {
+            QuickSort(enemies, 0, enemies.Length - 1, sortType);
+            Enemy enemy = enemies.First();
+            GoToCell(enemy.Cell);
+            yield return new WaitUntil(() => !moving);
+            enemy.gameObject.SetActive(false);
+            enemies = FindObjectsByType<Enemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        }
+    }
+
+    private void QuickSort(Enemy[] enemies, int low, int high, SortType sortType)
+    {
+        if (low < high)
+        {
+            int p = 0;
             switch (sortType)
             {
                 case SortType.VALUE:
-                    enemies = SortEnemiesByValue(enemies);
+                    p = PartitionByValue(enemies, low, high);
                     break;
                 case SortType.DISTANCE:
-                    enemies = SortEnemiesByDistance(enemies);
+                    p = PartitionByDistance(enemies, low, high);
                     break;
                 case SortType.DISTANCE_AND_VALUE:
-                    enemies = SortEnemiesByDistanceAndValue(enemies);
+                    p = PartitionByDistanceAndValue(enemies, low, high);
+                    break;
+                default:
+                    p = PartitionByValue(enemies, low, high);
                     break;
             }
-            GoToCell(enemies[i].Cell);
-            yield return new WaitUntil(() => !moving);
-            enemies[i].gameObject.SetActive(false);
-            i++;
+
+            QuickSort(enemies, low, p - 1, sortType);
+            QuickSort(enemies, p + 1, high, sortType);
+        }
+    }
+
+    private int PartitionByValue(Enemy[] enemies, int low, int high)
+    {
+        int pivot = enemies[high].Bounty;
+
+        int i = low - 1;
+
+        for (int j = low; j <= high - 1; j++)
+        {
+            if (enemies[j].Bounty > pivot)
+            {
+                i++;
+                Swap(enemies, i, j);
+            }
         }
 
+        Swap(enemies, i + 1, high);
+        return i + 1;
     }
 
-    private Enemy[] SortEnemiesByDistance(Enemy[] unsortedEnemies)
+    private int PartitionByDistance(Enemy[] enemies, int low, int high)
     {
-        return unsortedEnemies;
+        int pivot = GetEnemyDistanceToPlayer(enemies[high]);
+
+        int i = low - 1;
+
+        for (int j = low; j <= high - 1; j++)
+        {
+            if (GetEnemyDistanceToPlayer(enemies[j]) < pivot)
+            {
+                i++;
+                Swap(enemies, i, j);
+            }
+        }
+
+        Swap(enemies, i + 1, high);
+        return i + 1;
     }
 
-    private Enemy[] SortEnemiesByValue(Enemy[] unsortedEnemies)
+    private int GetEnemyDistanceToPlayer(Enemy enemy)
     {
-        return unsortedEnemies;
+        int distance = 0;
+        Grid grid = GameManager.Instance.GetGrid();
+
+        int source = targetCell.index;
+
+        PathElement[] result = null;
+        List<int> path = null;
+        switch (pathfindAlgo)
+        {
+            case PathfindAlgo.BFS:
+                result = BFS(source, enemy.Cell.index);
+                path = MakePathFromResultBFS(enemy.Cell.index, result);
+                distance = path.Count;
+                break;
+        }
+
+        return distance;
     }
 
-    private Enemy[] SortEnemiesByDistanceAndValue(Enemy[] unsortedEnemies)
+    private int PartitionByDistanceAndValue(Enemy[] enemies, int low, int high)
     {
-        return unsortedEnemies;
+        throw new NotImplementedException();
+    }
+
+    private void Swap(Enemy[] arr, int i, int j)
+    {
+        Enemy temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
     }
 
     private IEnumerator GoToCellAnimation(List<int> path)
