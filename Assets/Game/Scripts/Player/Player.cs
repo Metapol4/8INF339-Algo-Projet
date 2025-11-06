@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -27,6 +28,10 @@ public class Player : MonoBehaviour
     private bool moving = false;
     [SerializeField]
     private PathfindAlgo pathfindAlgo = PathfindAlgo.DIJKSTRA;
+    [SerializeField]
+    private bool chasingEnemies = false;
+    [SerializeField]
+    private SortType sortType = SortType.VALUE;
 
 
     private void Start()
@@ -63,6 +68,55 @@ public class Player : MonoBehaviour
             }
             GameManager.Instance.UpdateAlgoText(pathfindAlgo);
         }
+    }
+
+    public void OnStart(InputAction.CallbackContext context)
+    {
+        if (context.started && !chasingEnemies)
+        {
+            StartCoroutine(EnemySequence());
+        }
+    }
+
+    private IEnumerator EnemySequence()
+    {
+        int i = 0;
+        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        while (i < enemies.Length)
+        {
+            switch (sortType)
+            {
+                case SortType.VALUE:
+                    enemies = SortEnemiesByValue(enemies);
+                    break;
+                case SortType.DISTANCE:
+                    enemies = SortEnemiesByDistance(enemies);
+                    break;
+                case SortType.DISTANCE_AND_VALUE:
+                    enemies = SortEnemiesByDistanceAndValue(enemies);
+                    break;
+            }
+            GoToCell(enemies[i].Cell);
+            yield return new WaitUntil(() => !moving);
+            enemies[i].gameObject.SetActive(false);
+            i++;
+        }
+
+    }
+
+    private Enemy[] SortEnemiesByDistance(Enemy[] unsortedEnemies)
+    {
+        return unsortedEnemies;
+    }
+
+    private Enemy[] SortEnemiesByValue(Enemy[] unsortedEnemies)
+    {
+        return unsortedEnemies;
+    }
+
+    private Enemy[] SortEnemiesByDistanceAndValue(Enemy[] unsortedEnemies)
+    {
+        return unsortedEnemies;
     }
 
     private IEnumerator GoToCellAnimation(List<int> path)
@@ -119,7 +173,7 @@ public class Player : MonoBehaviour
             path.Add(v);
         }
 
-        path.Reverse(); 
+        path.Reverse();
 
         return path;
     }

@@ -49,16 +49,16 @@ public class GameManager : MonoBehaviour
                 SpriteRenderer renderer;
                 switch (grid.GridArray[index].cellType)
                 {
-                    case Utils.CellType.GROUND:
+                    case CellType.GROUND:
                         renderer = Instantiate<SpriteRenderer>(groundSprite);
                         break;
-                    case Utils.CellType.WALL:
+                    case CellType.WALL:
                         renderer = Instantiate<SpriteRenderer>(wallSprite);
                         break;
-                    case Utils.CellType.WATER:
+                    case CellType.WATER:
                         renderer = Instantiate<SpriteRenderer>(waterSprite);
                         break;
-                    case Utils.CellType.ELEVATED:
+                    case CellType.ELEVATED:
                         renderer = Instantiate<SpriteRenderer>(elevatedSprite);
                         break;
                     default:
@@ -67,12 +67,11 @@ public class GameManager : MonoBehaviour
                 }
                 Vector3 position = grid.CellToWorld(i, j);
                 renderer.transform.position = position;
-                //Debug.Log(i + " " + j);
             }
         }
         grid.ComputeAdjencies();
 
-        PlaceRandomEnemies();
+        PlaceScriptedEnemies();
     }
 
     public void PlaceRandomEnemies()
@@ -97,12 +96,14 @@ public class GameManager : MonoBehaviour
         GridCell[] gridArray = grid.GridArray;
 
         int[] enemies = new int[] { 8, 12, 60, 99 };
+        int[] bounties = new int[] { 1, 2, 3, 4 };
 
-        foreach (int i in enemies)
+        for(int i = 0; i < enemies.Length; i++) 
         {
-            gridArray[i].enemy = Instantiate(enemyPrefab);
-            gridArray[i].enemy.Cell = gridArray[i];
-            gridArray[i].enemy.transform.position = grid.CellToWorld(gridArray[i]);
+            gridArray[enemies[i]].enemy = Instantiate(enemyPrefab);
+            gridArray[enemies[i]].enemy.Cell = gridArray[enemies[i]];
+            gridArray[enemies[i]].enemy.transform.position = grid.CellToWorld(gridArray[enemies[i]]);
+            gridArray[enemies[i]].enemy.Bounty = bounties[i];
         }
     }
 

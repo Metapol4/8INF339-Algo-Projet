@@ -832,6 +832,8 @@ MonoBehaviour:
   elevatedSprite: {fileID: 4441121182481516842, guid: 96a59220f0a49ad47be3d6f276dec8bb, type: 3}
   algoText: {fileID: 1058418845}
   enemyPrefab: {fileID: 7790803683382351903, guid: 8fd6a7060e0d3be41aa13866a9b04d65, type: 3}
+  nbOfRandomEnemies: 5
+  randomBountyMax: 10
 --- !u!4 &1717894618
 Transform:
   m_ObjectHideFlags: 0
@@ -881,6 +883,8 @@ MonoBehaviour:
   moveSpeed: 0.15
   moving: 0
   pathfindAlgo: 0
+  chasingEnemies: 0
+  sortType: 0
 --- !u!212 &1973092597
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -1051,6 +1055,22 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 89a739be-ef57-42be-874b-6c2e2b6002b1
     m_ActionName: 'Player/ChangeAlgo[/Keyboard/e,/Mouse/leftButton]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1973092596}
+        m_TargetAssemblyTypeName: Player, Assembly-CSharp
+        m_MethodName: OnStart
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 1f5a2ba5-33ab-4419-82f4-12580857720c
+    m_ActionName: 'Player/Start[/Keyboard/r]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player

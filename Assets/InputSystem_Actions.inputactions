@@ -16,6 +16,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Start",
+                    "type": "Button",
+                    "id": "1f5a2ba5-33ab-4419-82f4-12580857720c",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "ChangeAlgo",
                     "type": "Button",
                     "id": "89a739be-ef57-42be-874b-6c2e2b6002b1",
@@ -39,17 +48,6 @@
                 },
                 {
                     "name": "",
-                    "id": "b3f66d0b-7751-423f-908b-a11c5bd95930",
-                    "path": "<Gamepad>/buttonNorth",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Gamepad",
-                    "action": "Interact",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "7cb07aed-c256-4796-b74c-aa947435a102",
                     "path": "<Mouse>/leftButton",
                     "interactions": "",
@@ -61,22 +59,22 @@
                 },
                 {
                     "name": "",
-                    "id": "63b71286-d831-4aa6-a860-8a4b871562b9",
-                    "path": "<Keyboard>/tab",
+                    "id": "5bc2a16b-5c3d-45ff-aaaa-a95ad8b7e0e1",
+                    "path": "<Keyboard>/r",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
-                    "action": "ChangeAlgo",
+                    "action": "Start",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "df2dc021-221a-4113-97d2-00a35c69cef8",
-                    "path": "<Gamepad>/buttonSouth",
+                    "id": "63b71286-d831-4aa6-a860-8a4b871562b9",
+                    "path": "<Keyboard>/tab",
                     "interactions": "",
                     "processors": "",
-                    "groups": "Gamepad",
+                    "groups": "Keyboard&Mouse",
                     "action": "ChangeAlgo",
                     "isComposite": false,
                     "isPartOfComposite": false

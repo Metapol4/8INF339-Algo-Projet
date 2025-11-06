@@ -83,7 +83,7 @@ public class Grid
     private void PlaceSpecialCells()
     {
         int[] walls = new int[] { 4, 14, 24, 50, 51, 52, 53, 54, 55, 80, 81, 91, 77, 87, 97, 78 };
-        int[] water = new int[] { 63, 73, 83 };
+        int[] water = new int[] { 63, 73, 83, 79 };
         int[] elevated = new int[] { 8, 18, 28 };
 
         foreach (int i in walls)

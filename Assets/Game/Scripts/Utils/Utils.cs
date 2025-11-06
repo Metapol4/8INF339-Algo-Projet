@@ -5,6 +5,13 @@ namespace Utils
         DIJKSTRA,
         BFS
     }
+    public enum SortType
+    {
+        NONE,
+        VALUE,
+        DISTANCE,
+        DISTANCE_AND_VALUE
+    }
     public enum CellType
     {
         GROUND = 1,
