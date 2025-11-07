@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Utils;
+using static UnityEngine.EventSystems.EventTrigger;
 
 public struct PathElement
 {
@@ -84,7 +85,18 @@ public class Player : MonoBehaviour
         Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         while (enemies.Length > 0)
         {
-            QuickSort(enemies, 0, enemies.Length - 1, sortType);
+            switch (sortType)
+            {
+                case SortType.VALUE:
+                    SortByValue(enemies);
+                    break;
+                case SortType.DISTANCE:
+                    SortByDistance(enemies);
+                    break;
+                case SortType.DISTANCE_AND_VALUE:
+                    SortByDistanceAndValue(enemies);
+                    break;
+            }
             Enemy enemy = enemies.First();
             GoToCell(enemy.Cell);
             yield return new WaitUntil(() => !moving);
@@ -93,29 +105,61 @@ public class Player : MonoBehaviour
         }
     }
 
-    private void QuickSort(Enemy[] enemies, int low, int high, SortType sortType)
+    private void SortByDistance(Enemy[] enemies)
     {
-        if (low < high)
+        int distance = 0;
+        Grid grid = GameManager.Instance.GetGrid();
+
+        int source = targetCell.index;
+
+        List<List<PathElement>> paths = new List<List<PathElement>>();
+
+        foreach (Enemy enemy in enemies)
         {
-            int p = 0;
-            switch (sortType)
+
+            PathElement[] result = null;
+            List<PathElement> path = null;
+            switch (pathfindAlgo)
             {
-                case SortType.VALUE:
-                    p = PartitionByValue(enemies, low, high);
-                    break;
-                case SortType.DISTANCE:
-                    p = PartitionByDistance(enemies, low, high);
-                    break;
-                case SortType.DISTANCE_AND_VALUE:
-                    p = PartitionByDistanceAndValue(enemies, low, high);
-                    break;
-                default:
-                    p = PartitionByValue(enemies, low, high);
+                case PathfindAlgo.BFS:
+                    result = BFS(source, enemy.Cell.index);
+                    path = MakePathFromResult(enemy.Cell, result);
+                    distance = path.Count;
                     break;
             }
 
-            QuickSort(enemies, low, p - 1, sortType);
-            QuickSort(enemies, p + 1, high, sortType);
+            if (path != null)
+                paths.Add(path);
+        }
+        // paths
+        List<PathElement>[] arrayPaths = paths.ToArray();
+        QuickSortByDistance(arrayPaths, 0, paths.Count - 1); //sort paths
+        Enemy[] sortedEnemies = new Enemy[arrayPaths.Length];
+        foreach (List<PathElement> path in arrayPaths)
+        {
+            
+        }
+        // reconstruct Enemy[] with path dests
+    }
+
+    private void SortByValue(Enemy[] enemies)
+    {
+
+        QuickSortByValue(enemies, 0, enemies.Length - 1);
+    }
+    private void SortByDistanceAndValue(Enemy[] enemies)
+    {
+
+    }
+
+    private void QuickSortByValue(Enemy[] enemies, int low, int high)
+    {
+        if (low < high)
+        {
+            int p = PartitionByValue(enemies, low, high);
+
+            QuickSortByValue(enemies, low, p - 1);
+            QuickSortByValue(enemies, p + 1, high);
         }
     }
 
@@ -138,41 +182,43 @@ public class Player : MonoBehaviour
         return i + 1;
     }
 
-    private int PartitionByDistance(Enemy[] enemies, int low, int high)
+    private void QuickSortByDistance(List<PathElement>[] paths, int low, int high)
     {
-        int pivot = GetEnemyDistanceToPlayer(enemies[high]);
+        if (low < high)
+        {
+            int p = PartitionByDistance(paths, low, high);
+
+            QuickSortByDistance(paths, low, p - 1);
+            QuickSortByDistance(paths, p + 1, high);
+        }
+    }
+
+    private int PartitionByDistance(List<PathElement>[] paths, int low, int high)
+    {
+        int pivot = GetEnemyDistanceToPlayer(paths[high]);
 
         int i = low - 1;
 
         for (int j = low; j <= high - 1; j++)
         {
-            if (GetEnemyDistanceToPlayer(enemies[j]) < pivot)
+            if (GetEnemyDistanceToPlayer(paths[j]) < pivot)
             {
                 i++;
-                Swap(enemies, i, j);
+                Swap(paths, i, j);
             }
         }
 
-        Swap(enemies, i + 1, high);
+        Swap(paths, i + 1, high);
         return i + 1;
     }
 
-    private int GetEnemyDistanceToPlayer(Enemy enemy)
+    private int GetEnemyDistanceToPlayer(List<PathElement> path)
     {
         int distance = 0;
-        Grid grid = GameManager.Instance.GetGrid();
 
-        int source = targetCell.index;
-
-        PathElement[] result = null;
-        List<int> path = null;
-        switch (pathfindAlgo)
+        foreach (PathElement e in path)
         {
-            case PathfindAlgo.BFS:
-                result = BFS(source, enemy.Cell.index);
-                path = MakePathFromResultBFS(enemy.Cell.index, result);
-                distance = path.Count;
-                break;
+            distance += e.weight;
         }
 
         return distance;
@@ -190,7 +236,14 @@ public class Player : MonoBehaviour
         arr[j] = temp;
     }
 
-    private IEnumerator GoToCellAnimation(List<int> path)
+    private void Swap(List<PathElement>[] arr, int i, int j)
+    {
+        List<PathElement> temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+    }
+
+    private IEnumerator GoToCellAnimation(List<PathElement> path)
     {
         if (!moving)
         {
@@ -198,7 +251,7 @@ public class Player : MonoBehaviour
             Grid grid = GameManager.Instance.GetGrid();
             foreach (var i in path)
             {
-                transform.position = grid.CellToWorld(grid.GridArray[i]);
+                transform.position = grid.CellToWorld(grid.GridArray[i.index]);
                 yield return new WaitForSeconds(moveSpeed);
             }
             moving = false;
@@ -216,18 +269,16 @@ public class Player : MonoBehaviour
         int source = targetCell.index;
 
         PathElement[] result = null;
-        List<int> path = null;
         switch (pathfindAlgo)
         {
             case PathfindAlgo.DIJKSTRA:
                 result = Dijkstra(source);
-                path = MakePathFromResultDijkstra(source, cell.index, result);
                 break;
             case PathfindAlgo.BFS:
                 result = BFS(source, cell.index);
-                path = MakePathFromResultBFS(cell.index, result);
                 break;
         }
+        List<PathElement> path = MakePathFromResult(cell, result);
 
         if (path.Count <= 1)
             return;
@@ -236,28 +287,15 @@ public class Player : MonoBehaviour
         StartCoroutine(GoToCellAnimation(path));
     }
 
-    private List<int> MakePathFromResultBFS(int end, PathElement[] result)
+    private List<PathElement> MakePathFromResult(GridCell end, PathElement[] result)
     {
-        List<int> path = new List<int>();
-        for (int v = end; v != -1; v = result[v].parent)
-        {
-            path.Add(v);
-        }
+        List<PathElement> path = new List<PathElement>();
+        PathElement current = new PathElement(end.index, 1, end.index);
 
-        path.Reverse();
-
-        return path;
-    }
-
-    private List<int> MakePathFromResultDijkstra(int start, int end, PathElement[] result)
-    {
-        List<int> path = new List<int>();
-        int current = end;
-
-        while (current > -1)
+        while (current.parent > -1)
         {
             path.Add(current);
-            current = result[current].parent;
+            current = result[result[current.index].parent];
         }
 
         path.Reverse();
