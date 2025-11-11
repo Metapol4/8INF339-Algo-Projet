@@ -21,6 +21,8 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private TMP_Text algoText;
     [SerializeField]
+    private TMP_Text sortText;
+    [SerializeField]
     private Enemy enemyPrefab;
     [SerializeField]
     private int nbOfRandomEnemies = 5;
@@ -71,11 +73,19 @@ public class GameManager : MonoBehaviour
         }
         grid.ComputeAdjencies();
 
-        PlaceScriptedEnemies();
+        PlaceRandomEnemies();
     }
+
 
     public void PlaceRandomEnemies()
     {
+        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        foreach (Enemy enemy in enemies)
+        {
+            Destroy(enemy.gameObject);
+        }
+
         List<GridCell> walkableCells = grid.GetWalkableCells();
 
         for (int i = 0; i < nbOfRandomEnemies; i++)
@@ -118,6 +128,31 @@ public class GameManager : MonoBehaviour
                 algoText.text = "BFS";
                 break;
         }
+    }
+
+    public void UpdateSortText(SortType sortType)
+    {
+        switch (sortType)
+        {
+            case SortType.NONE:
+                sortText.text = "NONE";
+                break;
+            case SortType.VALUE:
+                sortText.text = "VALUE";
+                break;
+            case SortType.DISTANCE:
+                sortText.text = "DISTANCE";
+                break;
+            case SortType.DISTANCE_AND_VALUE:
+                sortText.text = "DISTANCE AND VALUE";
+                break;
+        }
+    }
+
+
+    public void ResetMap()
+    {
+        PlaceRandomEnemies();
     }
 
     public Grid GetGrid()

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -39,6 +40,7 @@ public class Player : MonoBehaviour
     private void Start()
     {
         GameManager.Instance.UpdateAlgoText(pathfindAlgo);
+        GameManager.Instance.UpdateSortText(sortType);
     }
 
 
@@ -46,6 +48,9 @@ public class Player : MonoBehaviour
     {
         if (context.started)
         {
+            if (chasingEnemies)
+                return;
+
             Vector3 mousepos = Mouse.current.position.ReadValue();
             mousepos.z = Camera.main.nearClipPlane + 1;
             Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(mousepos);
@@ -55,10 +60,13 @@ public class Player : MonoBehaviour
         }
     }
 
-    public void OnTab(InputAction.CallbackContext context)
+    public void OnChangeAlgo(InputAction.CallbackContext context)
     {
         if (context.started)
         {
+            if (chasingEnemies)
+                return;
+
             switch (pathfindAlgo)
             {
                 case PathfindAlgo.DIJKSTRA:
@@ -69,6 +77,44 @@ public class Player : MonoBehaviour
                     break;
             }
             GameManager.Instance.UpdateAlgoText(pathfindAlgo);
+        }
+    }
+    public void OnSortTypeChange(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            if (chasingEnemies)
+                return;
+
+            switch (sortType)
+            {
+                case SortType.NONE:
+                    sortType = SortType.VALUE;
+                    break;
+                case SortType.VALUE:
+                    sortType = SortType.DISTANCE;
+                    break;
+                case SortType.DISTANCE:
+                    sortType = SortType.DISTANCE_AND_VALUE;
+                    break;
+                case SortType.DISTANCE_AND_VALUE:
+                    sortType = SortType.NONE;
+                    break;
+            }
+            GameManager.Instance.UpdateSortText(sortType);
+        }
+    }
+
+    public void OnReset(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            if(chasingEnemies)
+                return;
+            Grid grid = GameManager.Instance.GetGrid();
+            transform.position = grid.CellToWorld(grid.GridArray[0]);
+            targetCell = grid.GridArray[0];
+            GameManager.Instance.ResetMap();
         }
     }
 
@@ -82,31 +128,58 @@ public class Player : MonoBehaviour
 
     private IEnumerator EnemySequence()
     {
+        chasingEnemies = true;
+        Grid grid = GameManager.Instance.GetGrid();
         Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        Enemy enemy = null;
         while (enemies.Length > 0)
         {
             switch (sortType)
             {
+                case SortType.NONE:
+                    enemy = enemies.First();
+                    GoToCell(enemy.Cell);
+                    break;
                 case SortType.VALUE:
                     SortByValue(enemies);
+                    enemy = enemies.First();
+                    GoToCell(enemy.Cell);
                     break;
                 case SortType.DISTANCE:
-                    SortByDistance(enemies);
+                    List<PathElement> path = SortByDistance(enemies).First();
+                    targetCell = grid.GridArray[path.Last().index];
+                    StartCoroutine(GoToCellAnimation(path));
+                    enemy = grid.GridArray[path.First().index].enemy;
                     break;
                 case SortType.DISTANCE_AND_VALUE:
                     SortByDistanceAndValue(enemies);
-                    break;
+                    chasingEnemies = false; // TODO: remove when implemented ^^
+                    yield break; // TODO: change to normal break when implemented ^^
             }
-            Enemy enemy = enemies.First();
-            GoToCell(enemy.Cell);
             yield return new WaitUntil(() => !moving);
-            enemy.gameObject.SetActive(false);
+
+            if (enemy)
+                enemy.gameObject.SetActive(false);
+
             enemies = FindObjectsByType<Enemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         }
+        chasingEnemies = false;
     }
 
-    private void SortByDistance(Enemy[] enemies)
+    private List<PathElement>[] SortByDistance(Enemy[] enemies)
     {
+        //PathElement[] result = null;
+        //switch (pathfindAlgo)
+        //{
+        //    case PathfindAlgo.DIJKSTRA:
+        //        result = Dijkstra(source);
+        //        break;
+        //    case PathfindAlgo.BFS:
+        //        result = BFS(source, cell.index);
+        //        break;
+        //}
+        //List<PathElement> path = MakePathFromResult(cell, result);
+        //
         int distance = 0;
         Grid grid = GameManager.Instance.GetGrid();
 
@@ -126,20 +199,19 @@ public class Player : MonoBehaviour
                     path = MakePathFromResult(enemy.Cell, result);
                     distance = path.Count;
                     break;
+                case PathfindAlgo.DIJKSTRA:
+                    result = Dijkstra(source);
+                    path = MakePathFromResult(enemy.Cell, result);
+                    distance = path.Count;
+                    break;
             }
 
             if (path != null)
                 paths.Add(path);
         }
-        // paths
         List<PathElement>[] arrayPaths = paths.ToArray();
-        QuickSortByDistance(arrayPaths, 0, paths.Count - 1); //sort paths
-        Enemy[] sortedEnemies = new Enemy[arrayPaths.Length];
-        foreach (List<PathElement> path in arrayPaths)
-        {
-            
-        }
-        // reconstruct Enemy[] with path dests
+        QuickSortByDistance(arrayPaths, 0, paths.Count - 1);
+        return arrayPaths;
     }
 
     private void SortByValue(Enemy[] enemies)
@@ -262,7 +334,6 @@ public class Player : MonoBehaviour
     {
         if (moving)
             return;
-        Debug.Log("Going to " + cell.index);
 
         Grid grid = GameManager.Instance.GetGrid();
 
@@ -290,15 +361,18 @@ public class Player : MonoBehaviour
     private List<PathElement> MakePathFromResult(GridCell end, PathElement[] result)
     {
         List<PathElement> path = new List<PathElement>();
-        PathElement current = new PathElement(end.index, 1, end.index);
 
-        while (current.parent > -1)
+        int currentIndex = end.index;
+
+        while (currentIndex != -1)
         {
-            path.Add(current);
-            current = result[result[current.index].parent];
+            PathElement element = result[currentIndex];
+            path.Add(element);
+            currentIndex = element.parent;
         }
 
         path.Reverse();
+
         return path;
     }
 
