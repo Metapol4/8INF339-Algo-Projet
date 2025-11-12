@@ -35,6 +35,10 @@ public class Player : MonoBehaviour
     private bool chasingEnemies = false;
     [SerializeField]
     private SortType sortType = SortType.VALUE;
+    [SerializeField]
+    private float bountyWeight = 1.0f;
+    [SerializeField]
+    private float distanceWeight = 0.3f;
 
 
     private void Start()
@@ -109,7 +113,7 @@ public class Player : MonoBehaviour
     {
         if (context.started)
         {
-            if(chasingEnemies)
+            if (chasingEnemies)
                 return;
             Grid grid = GameManager.Instance.GetGrid();
             transform.position = grid.CellToWorld(grid.GridArray[0]);
@@ -153,8 +157,9 @@ public class Player : MonoBehaviour
                     break;
                 case SortType.DISTANCE_AND_VALUE:
                     SortByDistanceAndValue(enemies);
-                    chasingEnemies = false; // TODO: remove when implemented ^^
-                    yield break; // TODO: change to normal break when implemented ^^
+                    enemy = enemies.First();
+                    GoToCell(enemy.Cell);
+                    break;
             }
             yield return new WaitUntil(() => !moving);
 
@@ -166,20 +171,46 @@ public class Player : MonoBehaviour
         chasingEnemies = false;
     }
 
+
+
+    private void SortByValue(Enemy[] enemies)
+    {
+        QuickSortByValue(enemies, 0, enemies.Length - 1);
+    }
+
+
+    private void QuickSortByValue(Enemy[] enemies, int low, int high)
+    {
+        if (low < high)
+        {
+            int p = PartitionByValue(enemies, low, high);
+
+            QuickSortByValue(enemies, low, p - 1);
+            QuickSortByValue(enemies, p + 1, high);
+        }
+    }
+
+    private int PartitionByValue(Enemy[] enemies, int low, int high)
+    {
+        int pivot = enemies[high].Bounty;
+
+        int i = low - 1;
+
+        for (int j = low; j <= high - 1; j++)
+        {
+            if (enemies[j].Bounty > pivot)
+            {
+                i++;
+                Swap(enemies, i, j);
+            }
+        }
+
+        Swap(enemies, i + 1, high);
+        return i + 1;
+    }
+
     private List<PathElement>[] SortByDistance(Enemy[] enemies)
     {
-        //PathElement[] result = null;
-        //switch (pathfindAlgo)
-        //{
-        //    case PathfindAlgo.DIJKSTRA:
-        //        result = Dijkstra(source);
-        //        break;
-        //    case PathfindAlgo.BFS:
-        //        result = BFS(source, cell.index);
-        //        break;
-        //}
-        //List<PathElement> path = MakePathFromResult(cell, result);
-        //
         int distance = 0;
         Grid grid = GameManager.Instance.GetGrid();
 
@@ -212,46 +243,6 @@ public class Player : MonoBehaviour
         List<PathElement>[] arrayPaths = paths.ToArray();
         QuickSortByDistance(arrayPaths, 0, paths.Count - 1);
         return arrayPaths;
-    }
-
-    private void SortByValue(Enemy[] enemies)
-    {
-
-        QuickSortByValue(enemies, 0, enemies.Length - 1);
-    }
-    private void SortByDistanceAndValue(Enemy[] enemies)
-    {
-
-    }
-
-    private void QuickSortByValue(Enemy[] enemies, int low, int high)
-    {
-        if (low < high)
-        {
-            int p = PartitionByValue(enemies, low, high);
-
-            QuickSortByValue(enemies, low, p - 1);
-            QuickSortByValue(enemies, p + 1, high);
-        }
-    }
-
-    private int PartitionByValue(Enemy[] enemies, int low, int high)
-    {
-        int pivot = enemies[high].Bounty;
-
-        int i = low - 1;
-
-        for (int j = low; j <= high - 1; j++)
-        {
-            if (enemies[j].Bounty > pivot)
-            {
-                i++;
-                Swap(enemies, i, j);
-            }
-        }
-
-        Swap(enemies, i + 1, high);
-        return i + 1;
     }
 
     private void QuickSortByDistance(List<PathElement>[] paths, int low, int high)
@@ -296,9 +287,78 @@ public class Player : MonoBehaviour
         return distance;
     }
 
-    private int PartitionByDistanceAndValue(Enemy[] enemies, int low, int high)
+
+    private void SortByDistanceAndValue(Enemy[] enemies)
     {
-        throw new NotImplementedException();
+        int distance = 0;
+        Grid grid = GameManager.Instance.GetGrid();
+
+        int source = targetCell.index;
+
+        List<List<PathElement>> paths = new List<List<PathElement>>();
+
+        foreach (Enemy enemy in enemies)
+        {
+
+            PathElement[] result = null;
+            List<PathElement> path = null;
+            switch (pathfindAlgo)
+            {
+                case PathfindAlgo.BFS:
+                    result = BFS(source, enemy.Cell.index);
+                    path = MakePathFromResult(enemy.Cell, result);
+                    distance = path.Count;
+                    break;
+                case PathfindAlgo.DIJKSTRA:
+                    result = Dijkstra(source);
+                    path = MakePathFromResult(enemy.Cell, result);
+                    distance = path.Count;
+                    break;
+            }
+
+            if (path != null)
+                paths.Add(path);
+        }
+        List<PathElement>[] arrayPaths = paths.ToArray();
+        if (enemies.Length == paths.Count)
+            QuickSortByDistanceAndValue(enemies, arrayPaths, 0, paths.Count - 1);
+    }
+
+    private void QuickSortByDistanceAndValue(Enemy[] enemies, List<PathElement>[] paths, int low, int high)
+    {
+        if (low < high)
+        {
+            int p = PartitionByDistanceAndValue(enemies, paths, low, high);
+
+            QuickSortByDistanceAndValue(enemies, paths, low, p - 1);
+            QuickSortByDistanceAndValue(enemies, paths, p + 1, high);
+        }
+    }
+
+    private int PartitionByDistanceAndValue(Enemy[] enemies, List<PathElement>[] paths, int low, int high)
+    {
+        float pivot = GetWeightedScore(enemies[high], GetEnemyDistanceToPlayer(paths[high]));
+
+        int i = low - 1;
+
+        for (int j = low; j <= high - 1; j++)
+        {
+            if (GetWeightedScore(enemies[j], GetEnemyDistanceToPlayer(paths[j])) > pivot)
+            {
+                i++;
+                Swap(enemies, i, j);
+                Swap(paths, i, j);
+            }
+        }
+
+        Swap(enemies, i + 1, high);
+        Swap(paths, i + 1, high);
+        return i + 1;
+    }
+
+    private float GetWeightedScore(Enemy enemy, int distance)
+    {
+        return bountyWeight * enemy.Bounty - distanceWeight * distance;
     }
 
     private void Swap(Enemy[] arr, int i, int j)
