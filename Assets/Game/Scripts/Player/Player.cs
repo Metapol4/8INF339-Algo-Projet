@@ -3,9 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Utils;
+using static Unity.VisualScripting.Member;
+using static UnityEditor.ShaderGraph.Internal.KeywordDependentCollection;
 using static UnityEngine.EventSystems.EventTrigger;
 
 public struct PathElement
@@ -47,7 +50,6 @@ public class Player : MonoBehaviour
         GameManager.Instance.UpdateSortText(sortType);
     }
 
-
     public void OnClick(InputAction.CallbackContext context)
     {
         if (context.started)
@@ -83,6 +85,7 @@ public class Player : MonoBehaviour
             GameManager.Instance.UpdateAlgoText(pathfindAlgo);
         }
     }
+
     public void OnSortTypeChange(InputAction.CallbackContext context)
     {
         if (context.started)
@@ -130,6 +133,154 @@ public class Player : MonoBehaviour
         }
     }
 
+    public void OnStartDP(InputAction.CallbackContext context)
+    {
+        if (context.started && !chasingEnemies)
+        {
+            DPSequence();
+        }
+    }
+
+    private void DPSequence()
+    {
+        // setup
+        Grid grid = GameManager.Instance.GetGrid();
+
+        List<GridCell> enemyCells = grid.GetCellsWithEnemies();
+        enemyCells.Insert(0, targetCell);
+
+        int[,] distances = PrecomputeDistances(enemyCells);
+
+        int full = (1 << enemyCells.Count);
+
+        int[,] dp = new int[full, enemyCells.Count];
+        int[,] parent = new int[full, enemyCells.Count];
+
+        for (int i = 0; i < full; i++)
+            for (int j = 0; j < enemyCells.Count; j++)
+                dp[i, j] = int.MaxValue;
+
+        for (int i = 0; i < enemyCells.Count; i++)
+        {
+            int mask = 1 << i;
+            dp[mask, i] = 0;
+            parent[mask, i] = -1;
+        }
+
+        // transitions
+        for (int transMask = 0; transMask < full; transMask++)
+        {
+            for(int i = 0; i < enemyCells.Count; i++)
+            {
+                if ((transMask & (1 << i)) == 0)
+                    continue;
+
+                int currentCost = dp[transMask, i];
+
+                if (currentCost == int.MaxValue)
+                    continue;
+
+                for(int j = 0; j < enemyCells.Count; j++)
+                {
+                    if((transMask & (1 << j)) != 0)
+                        continue;
+
+                    int nextMask = transMask | (1 << j);
+                    int nextCost = currentCost + distances[i, j];
+
+                    if(nextCost < dp[nextMask, j])
+                    {
+                        dp[nextMask, j] = nextCost;
+                        parent[nextMask, j] = i;
+                    }
+                }
+            }
+        }
+
+        //get enemy order
+        int bestEnd = -1;
+        int bestCost = int.MaxValue;
+
+        for (int i = 0; i < enemyCells.Count; i++)
+        {
+            if (dp[full - 1, i] < bestCost)
+            {
+                bestCost = dp[full - 1, i];
+                bestEnd = i;
+            }
+        }
+
+        List<int> order = new List<int>();
+        int pathMask = full - 1;
+        int cur = bestEnd;
+
+        while (pathMask > 0)
+        {
+            order.Add(cur);
+            int prev = parent[pathMask, cur];
+            pathMask ^= (1 << cur);
+            cur = prev;
+        }
+
+        foreach (int i in order)
+            Debug.Log(i);
+
+        StartCoroutine(EnemySequenceTSP(enemyCells, order));
+    }
+
+    private int[,] PrecomputeDistances(List<GridCell> points)
+    {
+        Grid grid = GameManager.Instance.GetGrid();
+        int n = points.Count;
+        int[,] dist = new int[n, n];
+
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                if (i == j)
+                {
+                    dist[i, j] = 0;
+                }
+                else
+                {
+                    int startIndex = points[i].index;
+                    int endIndex = points[j].index;
+
+                    switch (pathfindAlgo)
+                    {
+                        case PathfindAlgo.BFS:
+                            PathElement[] bfs = BFS(startIndex, endIndex);
+                            dist[i, j] = MakePathFromResult(grid.GridArray[endIndex], bfs).Count;
+                            break;
+                        case PathfindAlgo.DIJKSTRA:
+                            PathElement[] dijstra = Dijkstra(startIndex);
+                            List<PathElement> path = MakePathFromResult(grid.GridArray[endIndex], dijstra);
+                            dist[i, j] = GetEnemyDistanceToPlayer(path);
+                            break;
+                    }
+                }
+            }
+        }
+
+        return dist;
+    }
+
+    private IEnumerator EnemySequenceTSP(List<GridCell> enemyCells, List<int> order)
+    {
+        chasingEnemies = true;
+        Grid grid = GameManager.Instance.GetGrid();
+        foreach(int index in order)
+        {
+            GoToCell(enemyCells[index]);
+            yield return new WaitUntil(() => !moving);
+            Enemy enemy = enemyCells[index].enemy;
+            if (enemy)
+                enemy.gameObject.SetActive(false);
+        }
+        chasingEnemies = false;
+    }
+
     private IEnumerator EnemySequence()
     {
         chasingEnemies = true;
@@ -170,8 +321,6 @@ public class Player : MonoBehaviour
         }
         chasingEnemies = false;
     }
-
-
 
     private void SortByValue(Enemy[] enemies)
     {
@@ -384,6 +533,21 @@ public class Player : MonoBehaviour
             foreach (var i in path)
             {
                 transform.position = grid.CellToWorld(grid.GridArray[i.index]);
+                yield return new WaitForSeconds(moveSpeed);
+            }
+            moving = false;
+        }
+    }
+
+    private IEnumerator GoToCellAnimation(List<int> path)
+    {
+        if (!moving)
+        {
+            moving = true;
+            Grid grid = GameManager.Instance.GetGrid();
+            foreach (var i in path)
+            {
+                transform.position = grid.CellToWorld(grid.GridArray[i]);
                 yield return new WaitForSeconds(moveSpeed);
             }
             moving = false;

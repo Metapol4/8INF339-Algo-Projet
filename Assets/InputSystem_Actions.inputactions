@@ -50,6 +50,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "StartDP",
+                    "type": "Button",
+                    "id": "cf521987-ff3f-4c10-9b76-3c0b0232cc7a",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -116,6 +125,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "ChangeSortType",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "54f19391-3d8a-4837-87ac-21412f01cde5",
+                    "path": "<Keyboard>/d",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "StartDP",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

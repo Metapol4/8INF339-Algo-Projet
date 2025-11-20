@@ -208,4 +208,17 @@ public class Grid
 
         return cells;
     }
+
+    public List<GridCell> GetCellsWithEnemies()
+    {
+        List<GridCell> cells = new List<GridCell>();
+
+        foreach(GridCell cell in GridArray)
+        {
+            if(cell.enemy != null)
+                cells.Add(cell);
+        }
+
+        return cells;
+    }
 }
