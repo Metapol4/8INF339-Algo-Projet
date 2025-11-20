@@ -42,6 +42,7 @@ public class Player : MonoBehaviour
     private float bountyWeight = 1.0f;
     [SerializeField]
     private float distanceWeight = 0.3f;
+    List<GridCell> enemyCells;
 
 
     private void Start()
@@ -122,6 +123,14 @@ public class Player : MonoBehaviour
             transform.position = grid.CellToWorld(grid.GridArray[0]);
             targetCell = grid.GridArray[0];
             GameManager.Instance.ResetMap();
+
+            enemyCells = grid.GetCellsWithEnemies();
+            int i = 0;
+            foreach (GridCell cell in enemyCells)
+            {
+                cell.enemy.UpdateIdText(i);
+                i++;
+            }
         }
     }
 
@@ -141,91 +150,95 @@ public class Player : MonoBehaviour
         }
     }
 
+    // adapted from Karp algorithm
     private void DPSequence()
     {
         // setup
-        Grid grid = GameManager.Instance.GetGrid();
+        List<GridCell> tmpCells = new List<GridCell>();
+        tmpCells.Add(targetCell);
+        tmpCells.AddRange(enemyCells);
 
-        List<GridCell> enemyCells = grid.GetCellsWithEnemies();
-        enemyCells.Insert(0, targetCell);
+        int[,] distances = PrecomputeDistances(tmpCells);
+        int n = distances.GetLength(0);
 
-        int[,] distances = PrecomputeDistances(enemyCells);
+        int full = (1 << n);
+        int infinite = int.MaxValue / 4;
 
-        int full = (1 << enemyCells.Count);
-
-        int[,] dp = new int[full, enemyCells.Count];
-        int[,] parent = new int[full, enemyCells.Count];
+        int[,] dp = new int[full, tmpCells.Count];
+        int[,] parent = new int[full, tmpCells.Count];
 
         for (int i = 0; i < full; i++)
-            for (int j = 0; j < enemyCells.Count; j++)
-                dp[i, j] = int.MaxValue;
-
-        for (int i = 0; i < enemyCells.Count; i++)
         {
-            int mask = 1 << i;
-            dp[mask, i] = 0;
-            parent[mask, i] = -1;
+            for (int j = 0; j < tmpCells.Count; j++)
+            {
+                dp[i, j] = infinite;
+                parent[i, j] = -1;
+            }
         }
 
+        dp[1, 0] = 0;
+
+
         // transitions
-        for (int transMask = 0; transMask < full; transMask++)
+        for (int transMask = 1; transMask < full; transMask++)
         {
-            for(int i = 0; i < enemyCells.Count; i++)
+            if ((transMask & 1) == 0)
+                continue;
+
+            for (int j = 1; j < n; j++)
             {
-                if ((transMask & (1 << i)) == 0)
+                if ((transMask & (1 << j)) == 0)
                     continue;
 
-                int currentCost = dp[transMask, i];
+                int previousMask = transMask ^ (1 << j);
 
-                if (currentCost == int.MaxValue)
-                    continue;
-
-                for(int j = 0; j < enemyCells.Count; j++)
+                for (int k = 0; k < n; k++)
                 {
-                    if((transMask & (1 << j)) != 0)
+                    if ((previousMask & (1 << k)) == 0)
                         continue;
 
-                    int nextMask = transMask | (1 << j);
-                    int nextCost = currentCost + distances[i, j];
+                    int cost = dp[previousMask, k] + distances[k, j];
 
-                    if(nextCost < dp[nextMask, j])
+                    if (cost < dp[transMask, j])
                     {
-                        dp[nextMask, j] = nextCost;
-                        parent[nextMask, j] = i;
+                        dp[transMask, j] = cost;
+                        parent[transMask, j] = k;
                     }
                 }
             }
         }
 
         //get enemy order
-        int bestEnd = -1;
-        int bestCost = int.MaxValue;
+        int fullMask = full - 1;
+        int minCost = infinite;
+        int lastParent = 0;
 
-        for (int i = 0; i < enemyCells.Count; i++)
+        for (int j = 1; j < n; j++)
         {
-            if (dp[full - 1, i] < bestCost)
+            int cost = dp[fullMask, j] + distances[j, 0];
+            if (cost < minCost)
             {
-                bestCost = dp[full - 1, i];
-                bestEnd = i;
+                minCost = cost;
+                lastParent = j;
             }
         }
 
         List<int> order = new List<int>();
-        int pathMask = full - 1;
-        int cur = bestEnd;
+        int currentMask = fullMask;
+        int currentParent = lastParent;
 
-        while (pathMask > 0)
+        while (currentParent != 0)
         {
-            order.Add(cur);
-            int prev = parent[pathMask, cur];
-            pathMask ^= (1 << cur);
-            cur = prev;
+            order.Add(currentParent);
+            int previousParent = parent[currentMask, currentParent];
+            currentMask ^= (1 << currentParent);
+            currentParent = previousParent;
         }
+        order.Add(0);
+        order.Reverse();
+        order.Add(0);
 
-        foreach (int i in order)
-            Debug.Log(i);
-
-        StartCoroutine(EnemySequenceTSP(enemyCells, order));
+        StartCoroutine(EnemySequenceTSP(tmpCells, order));
     }
 
     private int[,] PrecomputeDistances(List<GridCell> points)
@@ -233,6 +246,7 @@ public class Player : MonoBehaviour
         Grid grid = GameManager.Instance.GetGrid();
         int n = points.Count;
         int[,] dist = new int[n, n];
+
 
         for (int i = 0; i < n; i++)
         {
@@ -270,7 +284,7 @@ public class Player : MonoBehaviour
     {
         chasingEnemies = true;
         Grid grid = GameManager.Instance.GetGrid();
-        foreach(int index in order)
+        foreach (int index in order)
         {
             GoToCell(enemyCells[index]);
             yield return new WaitUntil(() => !moving);

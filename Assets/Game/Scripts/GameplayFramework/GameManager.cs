@@ -86,6 +86,11 @@ public class GameManager : MonoBehaviour
             Destroy(enemy.gameObject);
         }
 
+        for(int i = 0; i< grid.GridArray.Length; i++)
+        {
+            grid.GridArray[i].enemy = null;
+        }
+
         List<GridCell> walkableCells = grid.GetWalkableCells();
 
         for (int i = 0; i < nbOfRandomEnemies; i++)
