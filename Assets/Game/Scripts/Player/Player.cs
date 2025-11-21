@@ -1,15 +1,9 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Utils;
-using static Unity.VisualScripting.Member;
-using static UnityEditor.ShaderGraph.Internal.KeywordDependentCollection;
-using static UnityEngine.EventSystems.EventTrigger;
 
 public struct PathElement
 {
@@ -49,6 +43,7 @@ public class Player : MonoBehaviour
     {
         GameManager.Instance.UpdateAlgoText(pathfindAlgo);
         GameManager.Instance.UpdateSortText(sortType);
+        ResetMap();
     }
 
     public void OnClick(InputAction.CallbackContext context)
@@ -117,20 +112,25 @@ public class Player : MonoBehaviour
     {
         if (context.started)
         {
-            if (chasingEnemies)
-                return;
-            Grid grid = GameManager.Instance.GetGrid();
-            transform.position = grid.CellToWorld(grid.GridArray[0]);
-            targetCell = grid.GridArray[0];
-            GameManager.Instance.ResetMap();
+            ResetMap();
+        }
+    }
 
-            enemyCells = grid.GetCellsWithEnemies();
-            int i = 0;
-            foreach (GridCell cell in enemyCells)
-            {
-                cell.enemy.UpdateIdText(i);
-                i++;
-            }
+    public void ResetMap()
+    {
+        if (chasingEnemies)
+            return;
+        Grid grid = GameManager.Instance.GetGrid();
+        transform.position = grid.CellToWorld(grid.GridArray[0]);
+        targetCell = grid.GridArray[0];
+        GameManager.Instance.ResetMap();
+
+        enemyCells = grid.GetCellsWithEnemies();
+        int i = 0;
+        foreach (GridCell cell in enemyCells)
+        {
+            cell.enemy.UpdateIdText(i);
+            i++;
         }
     }
 

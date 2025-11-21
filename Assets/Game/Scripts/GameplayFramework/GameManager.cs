@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -72,8 +71,6 @@ public class GameManager : MonoBehaviour
             }
         }
         grid.ComputeAdjencies();
-
-        PlaceRandomEnemies();
     }
 
 
