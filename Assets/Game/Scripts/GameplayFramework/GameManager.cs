@@ -10,6 +10,12 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private Player player;
     [SerializeField]
+    private int gridWidth = 10;
+    [SerializeField]
+    private int gridHeight = 10;
+    [SerializeField]
+    private int gridCellSize = 1;
+    [SerializeField]
     private SpriteRenderer groundSprite;
     [SerializeField]
     private SpriteRenderer wallSprite;
@@ -38,7 +44,7 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
-        grid = new Grid(10, 10, 1);
+        grid = new Grid(gridWidth, gridHeight, gridCellSize);
 
         player.transform.position = grid.CellToWorld(new GridCell());
 
