@@ -4,10 +4,9 @@ using Utils;
 
 public static class Algorithms
 {
-    [SerializeField]
     private static float bountyWeight = 1.0f;
-    [SerializeField]
     private static float distanceWeight = 0.3f;
+
     // adapted from Held-Karp algorithm
     public static List<int> TSP(GridCell targetCell, List<GridCell> enemyCells, PathfindAlgo pathfindAlgo)
     {

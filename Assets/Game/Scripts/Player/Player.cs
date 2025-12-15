@@ -5,8 +5,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Utils;
 
-
-
 public class Player : MonoBehaviour
 {
     [SerializeField]
